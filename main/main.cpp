@@ -1,0 +1,90 @@
+#include "Arduino.h"
+#include <esp_log.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include "esp_adc/adc_continuous.h"
+
+#include "lcd.cpp"
+#include "triac_zcd.cpp"
+#include "menu.cpp"
+#include "manual.cpp"
+#include "pidalgo.cpp"
+#include "adcitf.cpp"
+void lcdtest();
+void rotarytask();
+void powerManual(void *arg);
+
+// mainfunc
+extern "C" void app_main()
+{
+  // init
+  initArduino();
+  initLCDpriv();
+  ESP_LOGD("Init", "Arduino core + LCD OK");
+
+  // ADC
+  lcd.setCursor(5, 1);
+  lcd.print("ADC-AC INIT");
+  // adc
+  adcinit();
+    ESP_LOGD("Init", "ADC-AC OK");
+  // adcend
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  // Power Checking
+  lcd.setCursor(5, 1);
+  lcd.print("  PWR CHECK");
+  pwrcheck();
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  // init triac
+  lcd.setCursor(6, 1);
+  lcd.print("TRIAC INIT");
+  initACctl();
+  // ok
+  lcd.setCursor(6, 1);
+  lcd.print(" SYSTEM OK");
+  pinMode(rotarysw, INPUT_PULLUP);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  lcd.clear();
+  initrotary();
+  // Do your own thing
+  ESP_LOGI("main_task", "All_Sys_Online");
+  adc();
+  xTaskCreate(menuloop, "Menu_Display", 2048, NULL, 2, &menu_hd);
+  vTaskSuspend(menu_hd);
+  xTaskCreate(powerManual, "Manual Power", 4096, NULL, 3, &pwr_man);
+  vTaskSuspend(pwr_man);
+  vTaskResume(menu_hd);
+
+  // lcdtest();
+  // err("Manual Triggered");
+}
+//---------------------------------------------
+
+//----------------------------------------------
+void rotarytest()
+{
+  while (1)
+  {
+    rotary_encoder_state_t state = {0, ROTARY_ENCODER_DIRECTION_NOT_SET};
+    ESP_ERROR_CHECK(rotary_encoder_get_state(&info, &state));
+    lcd.setCursor(0, 0);
+    if (state.direction == ROTARY_ENCODER_DIRECTION_CLOCKWISE)
+    {
+      lcd.print("CLWS");
+    }
+    if (state.direction == ROTARY_ENCODER_DIRECTION_COUNTER_CLOCKWISE)
+    {
+      lcd.print("CCWS");
+    }
+    if (state.direction == ROTARY_ENCODER_DIRECTION_NOT_SET)
+    {
+      lcd.print("IDLE");
+    }
+
+    lcd.setCursor(0, 1);
+
+    lcd.print(state.position);
+    rotary_encoder_reset(&info);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
+}

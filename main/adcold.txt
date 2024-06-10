@@ -1,0 +1,36 @@
+ //-------------ADC1 Init---------------//
+  adc_oneshot_unit_handle_t adc1_handle;
+  adc_oneshot_unit_init_cfg_t init_config1 = {
+      .unit_id = ADC_UNIT_1,
+  };
+  ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+  //-------------ADC1 Config---------------//
+  adc_oneshot_chan_cfg_t configvolt = {
+      .atten = VOLTAGE_ATTEN,
+      .bitwidth = ADC_BITWIDTH_DEFAULT,
+  };
+  adc_oneshot_chan_cfg_t configcurr = {
+      .atten = CURRENT_ATTEN,
+      .bitwidth = ADC_BITWIDTH_DEFAULT,
+  };
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, voltage_sense, &configvolt));
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, current_sense, &configcurr));
+
+  //-------------ADC1 Calibration Init---------------//
+  esp_err_t ret1 = ESP_FAIL;
+  esp_err_t ret2 = ESP_FAIL;
+  adc_cali_handle_t cali_volt_handle = NULL;
+  adc_cali_handle_t cali_curr_handle = NULL;
+  adc_cali_line_fitting_config_t cali_configvolt = {
+      .unit_id = ADC_UNIT_1,
+      .atten = VOLTAGE_ATTEN,
+      .bitwidth = ADC_BITWIDTH_DEFAULT,
+  };
+  ret1 = adc_cali_create_scheme_line_fitting(&cali_configvolt, &cali_volt_handle);
+  adc_cali_line_fitting_config_t cali_configcurr = {
+      .unit_id = ADC_UNIT_1,
+      .atten = CURRENT_ATTEN,
+      .bitwidth = ADC_BITWIDTH_DEFAULT,
+  };
+  ret2 = adc_cali_create_scheme_line_fitting(&cali_configcurr, &cali_curr_handle);

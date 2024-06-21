@@ -24,7 +24,7 @@ int dval = 1;
 void initACctl();
 void faultcheck();
 void faultchecktos(void *arg);
-void readsensor();
+void readsensor(void *arg);
 void pwrcheckinit();
 
 float getVoltage();
@@ -32,28 +32,32 @@ float getCurrent();
 // main
 float getVoltage()
 {
-    float volt =0;
-    //some calculation
+    float volt = 0;
+    // some calculation
     adcvoltmax = 0;
     return volt;
     return -1;
 }
 float getCurrent()
-{   
+{
     float curr = 0;
     // acs712 adc read
     adcurrmax = 0;
     return curr;
     return -1;
 }
-void readsensor()
-{   
-    adc();
-    voltage = getVoltage();
-    current = getCurrent();
-    power = voltage*current;
-    temp = getTemp();
-    ESP_LOGI("sensor","Voltage(U): %.2f V; Current(I): %.2f A; Power(P): %.2f W; Temp(T): %.2f 'C",voltage,current,power,temp);
+void readsensor(void *arg)
+{
+     while (1)
+    {
+        adc();
+        voltage = getVoltage();
+        current = getCurrent();
+        power = voltage * current;
+        temp = getTemp();
+        ESP_LOGI("sensor", "Voltage(U): %.2f V; Current(I): %.2f A; Power(P): %.2f W; Temp(T): %.2f 'C", voltage, current, power, temp);
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
 }
 
 pcnt_unit_handle_t pcnt_unit = NULL;
@@ -85,8 +89,7 @@ void pwrcheckinit()
 }
 void faultcheck()
 {
-    
-    readsensor();
+
     // get Freq main block
     pcnt_unit_start(pcnt_unit);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -96,31 +99,51 @@ void faultcheck()
     // end block
     mains_freq = mains_freq / 2;
     ESP_LOGD("PWR_Check", "Mains freq: %3dHz", mains_freq);
-    if (mains_freq < 10){
-        #ifndef CONFIG_DEBUG
+    if (mains_freq < 10)
+    {
+#ifndef CONFIG_DEBUG
         err("Undr Frq Protect");
-        #endif
+#endif
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Freq override 50");
-        vTaskDelay(200/portTICK_PERIOD_MS);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         mains_freq = 50;
     }
-    #ifndef CONFIG_DEBUG
+#ifndef CONFIG_DEBUG
     faultcheckrtd();
-    if (voltage == -1){err("Volt Sens Error");}
-    if (voltage < 110){err("Undr Volt Protect");}
-    if (voltage > ovv){err("Over Volt Protect");}
-    if (current == -1){err("Curr Sens Error");}
-    if (current > ovc){err("Over Curr Error");}
-    if (mains_freq > ovf){err("Over Frq Protect");}
-    #endif
-    
+    if (voltage == -1)
+    {
+        err("Volt Sens Error");
+    }
+    if (voltage < 110)
+    {
+        err("Undr Volt Protect");
+    }
+    if (voltage > ovv)
+    {
+        err("Over Volt Protect");
+    }
+    if (current == -1)
+    {
+        err("Curr Sens Error");
+    }
+    if (current > ovc)
+    {
+        err("Over Curr Error");
+    }
+    if (mains_freq > ovf)
+    {
+        err("Over Frq Protect");
+    }
+#endif
 }
-void faultcheckrtos(void *arg){
-    while(1){
-    faultcheck();
-        vTaskDelay(20000/portTICK_PERIOD_MS);
+void faultcheckrtos(void *arg)
+{
+    while (1)
+    {
+        faultcheck();
+        vTaskDelay(20000 / portTICK_PERIOD_MS);
     }
 }
 /*Wrapper to create dimmer, call from outside*/

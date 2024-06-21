@@ -14,6 +14,8 @@ void reverseString(char *original, char *reverse, int size);
 void initLCDpriv();
 void err(const char *messenge);
 void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int powerW, int ampe, char *messengees);
+void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int powerW, float ampe, char *messengees);
+
 void lcdtest();
 
 void reverseString(char *original, char *reverse, int size)
@@ -55,6 +57,8 @@ void err(const char *messenge)
   vTaskDelay(5000 / portTICK_PERIOD_MS);
   abort();
 #endif
+}void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int powerW, int ampe, char *messengees){
+  showtemp(temp,status,powerpercent,powerW, static_cast<float>(ampe),messengees);
 }
 
 void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int powerW, float ampe, char *messengees)
@@ -131,34 +135,5 @@ void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int power
   lcd.leftToRight();
 }
 
-void lcdtest()
-{
-  uint8_t count = 0;
-  int bef;
-  while (1)
-  {
-    if (count < 100)
-    {
-      showtemp(count, UP, count, count, count, (char *)"REFLOW");
-      // setPower(triac1, count);
-    };
-    if ((count >= 100) && (count < 200))
-    {
-      showtemp(count, DOWN, count, count, count, (char *)"SOLDER");
-      // setPower(triac1, count - 100);
-    };
-    if (count >= 200)
-    {
-      showtemp(count, STABLE, count, count, count, (char *)"  AUTO");
-    };
-    bef = count;
-    count += 1;
-    if (bef > count)
-    {
-      showtemp(count, STABLE, count, count, count, (char *)" SYSOK");
-      break;
-    }
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-  }
-}
+
 #endif

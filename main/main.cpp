@@ -81,13 +81,15 @@ extern "C" void app_main()
   // Do your own thing
   ESP_LOGI("main_task", "All_Sys_Online");
  // adc();
-  xTaskCreate(faultcheckrtos, "Checking Power", 4096, NULL, 1,&pwr_chk);
-  vTaskSuspend(pwr_chk);
   xTaskCreate(menuloop, "Menu_Display", 2048, NULL, 2, &menu_hd);
   vTaskSuspend(menu_hd);
   xTaskCreate(powerManual, "Manual Power", 4096, NULL, 3, &pwr_man);
   vTaskSuspend(pwr_man);
   vTaskResume(menu_hd);
+  //xTaskCreate(faultcheckrtos, "Checking Power", 4096, NULL,1,&pwr_chk);
+  xTaskCreate(readsensor,"Reading sensor", 4096,NULL,2,&sensor);
+
+  
 
   // lcdtest();
   // err("Manual Triggered");

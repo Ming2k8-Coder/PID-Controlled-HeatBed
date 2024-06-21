@@ -12,6 +12,7 @@
 TaskHandle_t menu_hd = NULL;
 TaskHandle_t pwr_man = NULL;
 TaskHandle_t pwr_chk = NULL;
+TaskHandle_t sensor = NULL;
 
 #define VOLTAGE_ATTEN ADC_ATTEN_DB_0 //CAN NOT USE DIFF ATEEN
 #define CURRENT_ATTEN ADC_ATTEN_DB_0 //

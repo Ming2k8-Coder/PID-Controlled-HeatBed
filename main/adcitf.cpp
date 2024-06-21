@@ -111,7 +111,7 @@ void adc()
     //}
     ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
     if (ret == ESP_OK)
-    {
+    {ESP_LOGI(TAG2,"ADC READ OK");
         for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES)
         {
             adc_digi_output_data_t *p = (adc_digi_output_data_t *)&result[i];

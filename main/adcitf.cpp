@@ -10,8 +10,11 @@
     - code hard
     -read peak-0;peak-peak,waveform
 */
+#ifndef ADCITF
+#define ADCITF
 #include "globals.h"
 #include "esp_adc/adc_continuous.h"
+#include "soc/soc_caps.h"
 //extern QueueHandle_t zerocross_evt;
 #define EXAMPLE_ADC_UNIT ADC_UNIT_1
 #define _EXAMPLE_ADC_UNIT_STR(unit) #unit
@@ -139,3 +142,4 @@ void adc()
         }
     }
 }
+#endif

@@ -23,8 +23,8 @@ int dval = 1;
 // triac2
 void initACctl();
 void faultcheck();
-void pwrcheck();
-void readsensor(void *arg);
+void faultchecktos(void *arg);
+void readsensor();
 void pwrcheckinit();
 
 float getVoltage();
@@ -47,7 +47,8 @@ float getCurrent()
     return -1;
 }
 void readsensor()
-{   adc();
+{   
+    adc();
     voltage = getVoltage();
     current = getCurrent();
     power = voltage*current;
@@ -55,37 +56,15 @@ void readsensor()
     ESP_LOGI("sensor","Voltage(U): %.2f V; Current(I): %.2f A; Power(P): %.2f W; Temp(T): %.2f 'C",voltage,current,power,temp);
 }
 
-void faultcheck(){
-    faultcheckrtd();
-    if (voltage == -1)
-    {
-        err("Volt Sens Error");
-    }
-    if (voltage < 110)
-    {
-        err("Undr Volt Protect");
-    }
-    if (voltage > ovv)
-    {
-        err("Over Volt Protect");
-    }
-    if (current == -1)
-    {
-        err("Curr Sens Error");
-    }
-    if (current > ovc)
-    {
-        err("Over Curr Error");
-    }
-}
+pcnt_unit_handle_t pcnt_unit = NULL;
 void pwrcheckinit()
 {
+    tempinit();
     pcnt_unit_config_t unit_config = {
         .low_limit = -10,
         .high_limit = 1000,
 
     };
-    pcnt_unit_handle_t pcnt_unit = NULL;
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
     pcnt_chan_config_t chan_config = {
         .edge_gpio_num = zero_cross,
@@ -100,63 +79,51 @@ void pwrcheckinit()
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
     ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
+    // pcnt_del_channel(pcnt_chan);
+    // pcnt_unit_disable(pcnt_unit);
+    // pcnt_del_unit(pcnt_unit);
+}
+void faultcheck()
+{
+    
+    readsensor();
+    // get Freq main block
     pcnt_unit_start(pcnt_unit);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     pcnt_unit_stop(pcnt_unit);
     pcnt_unit_get_count(pcnt_unit, &mains_freq);
-    // ESP_LOGD("PWR_Check", "%3dHz", mains_freq);
+    pcnt_unit_clear_count(pcnt_unit);
+    // end block
     mains_freq = mains_freq / 2;
     ESP_LOGD("PWR_Check", "Mains freq: %3dHz", mains_freq);
-    pcnt_del_channel(pcnt_chan);
-    pcnt_unit_disable(pcnt_unit);
-    pcnt_del_unit(pcnt_unit);
-}
-void pwrcheck()
-{
-    tempinit();
-    pwrcheckinit();
-    readsensor();
-    lcd.setCursor(6, 1);
-    lcd.print("DET ");
-    if (mains_freq < 100)
-    {
-        lcd.print(" ");
-        if (mains_freq < 10)
-        {
-            lcd.print(" ");
-        };
-    };
-    lcd.print(mains_freq);
-    lcd.print(" ");
-    lcd.print("Hz");
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-    lcd.setCursor(10, 1);
-    if (voltage < 100)
-    {
-        lcd.print(" ");
-        if (voltage < 10)
-        {
-            lcd.print(" ");
-        };
-    };
-    lcd.print(static_cast<int>(voltage));
-    lcd.print(" ");
-    lcd.print("V");
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-    faultcheck();
-    if (mains_freq > ovf)
-    {
-        err("Over Frq Protect");
-    }
-    if (mains_freq < 1)
-    {
-        // err("Undr Frq Protect");
+    if (mains_freq < 10){
+        #ifndef CONFIG_DEBUG
+        err("Undr Frq Protect");
+        #endif
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Freq override");
-        mains_freq = 3;
+        lcd.print("Freq override 50");
+        vTaskDelay(200/portTICK_PERIOD_MS);
+        mains_freq = 50;
+    }
+    #ifndef CONFIG_DEBUG
+    faultcheckrtd();
+    if (voltage == -1){err("Volt Sens Error");}
+    if (voltage < 110){err("Undr Volt Protect");}
+    if (voltage > ovv){err("Over Volt Protect");}
+    if (current == -1){err("Curr Sens Error");}
+    if (current > ovc){err("Over Curr Error");}
+    if (mains_freq > ovf){err("Over Frq Protect");}
+    #endif
+    
+}
+void faultcheckrtos(void *arg){
+    while(1){
+    faultcheck();
+        vTaskDelay(20000/portTICK_PERIOD_MS);
     }
 }
+/*Wrapper to create dimmer, call from outside*/
 void initACctl()
 {
     triac1 = createDimmer(triacio, zero_cross);

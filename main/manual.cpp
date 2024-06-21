@@ -3,11 +3,10 @@
 #include "triac_zcd.cpp"
 #include "globals.h"
 #include "menu.cpp"
-TaskHandle_t menu_hd = NULL;
-TaskHandle_t pwr_man = NULL;
 void powerManual(void *arg)
 {
   float lasttemp;
+  bool passingloop = true;
   int dispmode = 0;
   lcd.clear();
   while (1)
@@ -24,12 +23,15 @@ void powerManual(void *arg)
     {
       powerpercent++;
       up = false;
+      passingloop = false;
     }
     if (down)
     {
       powerpercent--;
       down = false;
+      passingloop = false;
     }
+    if (passingloop){
     if (powerpercent > 99)
     {
       powerpercent = 99;
@@ -39,7 +41,6 @@ void powerManual(void *arg)
       powerpercent = 0;
     }
     lasttemp = temp;
-    readsensor();
     if ((temp - lasttemp) > 0.1)
     {
       dispmode += 10;
@@ -50,20 +51,21 @@ void powerManual(void *arg)
     }
     if (dispmode > 0)
     {
-      showtemp(static_cast<int>(temp), UP, powerpercent, static_cast<int>(power), static_cast<int>(current), (char *)"MANUAL");
+      showtemp(static_cast<int>(temp), UP, powerpercent, static_cast<int>(power), current, (char *)"MANUAL");
       dispmode -= 1;
     }
     else if (dispmode < 0)
     {
-      showtemp(static_cast<int>(temp), DOWN, powerpercent, static_cast<int>(power), static_cast<int>(current), (char *)"MANUAL");
+      showtemp(static_cast<int>(temp), DOWN, powerpercent, static_cast<int>(power), current, (char *)"MANUAL");
       dispmode += 1;
     }
     else
     {
-      showtemp(static_cast<int>(temp), STABLE, powerpercent, static_cast<int>(power), static_cast<int>(current), (char *)"MANUAL");
+      showtemp(static_cast<int>(temp), STABLE, powerpercent, static_cast<int>(power), current, (char *)"MANUAL");
     }
    // ESP_LOGW("debugimport", "dispmode %d", dispmode);
     setPower(triac1, powerpercent);
+  }else{passingloop = true;}
   }
 }
 #endif

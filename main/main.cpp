@@ -4,6 +4,7 @@
 #include <LiquidCrystal_I2C.h>
 #include "esp_adc/adc_continuous.h"
 
+#include "globals.h"
 #include "lcd.cpp"
 #include "triac_zcd.cpp"
 #include "menu.cpp"
@@ -11,7 +12,7 @@
 #include "pidalgo.cpp"
 #include "adcitf.cpp"
 void lcdtest();
-void rotarytask();
+void rotarytest();
 void powerManual(void *arg);
 
 // mainfunc
@@ -21,19 +22,49 @@ extern "C" void app_main()
   initArduino();
   initLCDpriv();
   ESP_LOGD("Init", "Arduino core + LCD OK");
-
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
+  //------------------
   // ADC
   lcd.setCursor(5, 1);
   lcd.print("ADC-AC INIT");
-  // adc
   adcinit();
-    ESP_LOGD("Init", "ADC-AC OK");
-  // adcend
+  ESP_LOGD("Init", "ADC-AC OK");
   vTaskDelay(1000 / portTICK_PERIOD_MS);
+  // adcend---------------
   // Power Checking
   lcd.setCursor(5, 1);
   lcd.print("  PWR CHECK");
-  pwrcheck();
+  pwrcheckinit();
+  vTaskDelay(700 / portTICK_PERIOD_MS);
+  lcd.setCursor(6, 1);
+    lcd.print("DET ");
+    if (mains_freq < 100)
+    {
+        lcd.print(" ");
+        if (mains_freq < 10)
+        {
+            lcd.print(" ");
+        };
+    };
+    lcd.print(mains_freq);
+    lcd.print(" ");
+    lcd.print("Hz");
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    lcd.setCursor(11, 1);
+    if (voltage < 100)
+    {
+        lcd.print(" ");
+        if (voltage < 10)
+        {
+            lcd.print(" ");
+        };
+    };
+    lcd.print(static_cast<int>(voltage));
+    lcd.print(" ");
+    lcd.print("V");
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    faultcheck();
+
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   // init triac
   lcd.setCursor(6, 1);
@@ -46,9 +77,12 @@ extern "C" void app_main()
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   lcd.clear();
   initrotary();
+  //rotarytest();
   // Do your own thing
   ESP_LOGI("main_task", "All_Sys_Online");
-  adc();
+ // adc();
+  xTaskCreate(faultcheckrtos, "Checking Power", 4096, NULL, 1,&pwr_chk);
+  vTaskSuspend(pwr_chk);
   xTaskCreate(menuloop, "Menu_Display", 2048, NULL, 2, &menu_hd);
   vTaskSuspend(menu_hd);
   xTaskCreate(powerManual, "Manual Power", 4096, NULL, 3, &pwr_man);

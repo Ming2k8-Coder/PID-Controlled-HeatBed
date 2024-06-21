@@ -10,6 +10,7 @@ int frame = 1;
 int page = 1;
 int lastMenuItem = 1;
 int pidmode = 0;
+int lastpidmode = 0;
 
 const char *item1 = "Manual Power";
 const char *item2 = "PID Temp CTL";
@@ -18,7 +19,8 @@ const char *item4 = "Set I";
 const char *item5 = "Set D";
 const char *piditem1 = "Target Temp";
 const char *piditem2 = "Reflow ISO";
-// const char* item6 = "Display ";
+const char *piditem3 = "Back";
+const char *item6 = "Test";
 
 // extern bool up = false;
 // extern bool down = false;
@@ -38,9 +40,8 @@ void menuloop(void *arg);
 
 void readrotary()
 {
-    rotary_encoder_state_t state = {0,ROTARY_ENCODER_DIRECTION_NOT_SET};
+    rotary_encoder_state_t state = {0, ROTARY_ENCODER_DIRECTION_NOT_SET};
     ESP_ERROR_CHECK(rotary_encoder_get_state(&info, &state));
-    lcd.setCursor(0, 0);
     if (state.direction == ROTARY_ENCODER_DIRECTION_CLOCKWISE)
     {
         // lcd.print("CLWS");
@@ -105,7 +106,13 @@ void menuloop(void *arg)
         }
         else if (down && page == 2 && menuitem == 2)
         {
-            pidmode = 1;
+            down = false;
+            lastpidmode = pidmode;
+            pidmode++;
+            if (pidmode > 2)
+            {
+                pidmode = 2;
+            }
         }
         else if (down && page == 2 && menuitem == 3)
         {
@@ -164,7 +171,13 @@ void menuloop(void *arg)
         }
         else if (up && page == 2 && menuitem == 2)
         {
-            pidmode = 0;
+            up = false;
+            lastpidmode = pidmode;
+            pidmode--;
+            if (pidmode < 0)
+            {
+                pidmode = 0;
+            }
         }
         else if (up && page == 2 && menuitem == 3)
         {
@@ -217,6 +230,10 @@ void menuloop(void *arg)
                 else if (pidmode == 1)
                 {
                     // tringger pid reflow program
+                }
+                else if (pidmode == 2)
+                {
+                    page = 1;
                 }
             }
             else if (page == 1 && menuitem >= 2)
@@ -283,6 +300,11 @@ void drawMenu()
             displayMenuItem(item4, 1, false);
             displayMenuItem(item5, 2, true);
         }
+        else if (menuitem == 6 && frame == 5)
+        {
+            displayMenuItem(item4, 1, false);
+            displayMenuItem(item5, 2, true);
+        }
         else if (menuitem == 4 && frame == 4)
         {
             displayMenuItem(item4, 1, true);
@@ -298,7 +320,7 @@ void drawMenu()
             displayMenuItem(item2, 1, true);
             displayMenuItem(item3, 2, false);
         }
-        lcd.display();
+        // lcd.display();
     }
     else if (page == 2 && menuitem == 2)
     {
@@ -307,10 +329,20 @@ void drawMenu()
             displayMenuItem(piditem1, 1, true);
             displayMenuItem(piditem2, 2, false);
         }
-        else if (pidmode == 0)
+        else if (pidmode == 1 && lastpidmode == 0)
         {
             displayMenuItem(piditem1, 1, false);
             displayMenuItem(piditem2, 2, true);
+        }
+        else if (pidmode == 2)
+        {
+            displayMenuItem(piditem2, 1, false);
+            displayMenuItem(piditem3, 2, true);
+        }
+        else if (pidmode == 1 && lastpidmode == 2)
+        {
+            displayMenuItem(piditem2, 1, true);
+            displayMenuItem(piditem3, 2, false);
         }
     }
     else if (page == 2 && menuitem == 3)
@@ -326,6 +358,7 @@ void drawMenu()
     {
         displayIntMenuPage(item5, dval);
     }
+    lcd.display();
 }
 
 void displayIntMenuPage(const char *menuItem, int value)

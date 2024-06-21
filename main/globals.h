@@ -9,8 +9,12 @@
 #define version "V0.1"
 #define CONFIG_DEBUG
 
-#define VOLTAGE_ATTEN ADC_ATTEN_DB_0
-#define CURRENT_ATTEN ADC_ATTEN_DB_6
+TaskHandle_t menu_hd = NULL;
+TaskHandle_t pwr_man = NULL;
+TaskHandle_t pwr_chk = NULL;
+
+#define VOLTAGE_ATTEN ADC_ATTEN_DB_0 //CAN NOT USE DIFF ATEEN
+#define CURRENT_ATTEN ADC_ATTEN_DB_0 //
 #define voltage_sense ADC_CHANNEL_0 // GPIO36 SP
 #define current_sense ADC_CHANNEL_3 // GPIO39 SN
 
@@ -36,11 +40,12 @@ extern float power;
 extern float temp;
 extern int powerpercent;
 
-#define ovt 400
-#define ovc 20
-#define ovv 250
-#define udv 150
-#define ovf 100
+#define ovt 400 //temp limit 400C
+#define ovc 20 //current limit 20A
+#define ovv 250 //Voltage limit 250V
+#define udv 150 //voltage min 150V
+#define ovf 100 //frequentcy limit 100Hz (theorical 1kHz)
+
 
 #define ENABLE_HALF_STEPS true // Set to true to enable tracking of rotary encoder at half step resolution
 #define RESET_AT 0             // Set to a positive non-zero number to reset the position if this value is exceeded

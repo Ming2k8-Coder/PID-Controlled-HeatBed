@@ -57,7 +57,7 @@ void err(const char *messenge)
 #endif
 }
 
-void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int powerW, int ampe, char *messengees)
+void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int powerW, float ampe, char *messengees)
 {
   lcd.setCursor(0, 0);
   lcd.write(0);
@@ -90,10 +90,6 @@ void showtemp(int temp, TEMP_UP_DOWN_typedef status, int powerpercent, int power
   lcd.setCursor(0, 1);
   lcd.write(1);
   lcd.print(":");
-  if (powerpercent < 100)
-  {
-    lcd.print(" ");
-  };
   if (powerpercent < 10)
   {
     lcd.print(" ");
